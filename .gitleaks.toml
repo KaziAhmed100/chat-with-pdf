@@ -1,0 +1,21 @@
+# Gitleaks configuration. Extends the upstream default rules and adds a
+# small allowlist for our placeholder values in .env.example.
+
+# Run manually:  gitleaks git --pre-commit --staged --verbose
+# Runs automatically on every commit via the Husky pre-commit hook.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist for documentation placeholders"
+paths = [
+  '''(.*?)\.env\.example$''',
+  '''(.*?)README\.md$''',
+]
+regexes = [
+  '''sk-ant-xxxxxxxxxxxx''',
+  '''sk-xxxxxxxxxxxx''',
+  '''sk-proj-xxxxxxxxxxxx''',
+  '''postgresql://user:password@host''',
+]

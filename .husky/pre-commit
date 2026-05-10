@@ -1,1 +1,7 @@
+# Block any commit that contains something that looks like a secret.
+# `protect --staged` scans the staged diff specifically — fast, runs on
+# every commit, fails the commit if anything matches a known secret rule.
+gitleaks protect --staged --redact --verbose
+
+# Then run the existing lint + format checks.
 npx lint-staged
