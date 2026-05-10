@@ -38,7 +38,7 @@ the deployed app applies per-IP rate limiting on all LLM-calling endpoints
 
 - [x] Phase 1: Project scaffolding
 - [x] Phase 2: Database and schema
-- [ ] Phase 3: PDF upload and ingestion
+- [x] Phase 3: PDF upload and ingestion
 - [ ] Phase 4: Chat with citations
 - [ ] Phase 5: Summarization and transcript export
 - [ ] Phase 6: Tests, deployment, polish
