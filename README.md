@@ -23,10 +23,21 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Security & Cost Controls
+
+API keys are managed through environment variables and never committed to
+the repository. Pre-commit hooks run [gitleaks](https://github.com/gitleaks/gitleaks)
+to block accidental secret commits, and `.env.example` documents required
+variables without exposing values.
+
+Spend limits are enforced at the provider level (Anthropic & OpenAI), and
+the deployed app applies per-IP rate limiting on all LLM-calling endpoints
+(added in Phase 4).
+
 ## Roadmap
 
 - [x] Phase 1: Project scaffolding
-- [ ] Phase 2: Database and schema
+- [x] Phase 2: Database and schema
 - [ ] Phase 3: PDF upload and ingestion
 - [ ] Phase 4: Chat with citations
 - [ ] Phase 5: Summarization and transcript export
