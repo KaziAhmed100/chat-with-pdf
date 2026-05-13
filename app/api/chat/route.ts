@@ -22,22 +22,19 @@ const requestSchema = z.object({
 // - "I don't know" honesty is reinforced — RAG without this hallucinates.
 // - Tone instructions are minimal; Claude's defaults are already good.
 function buildSystemPrompt(retrieved: RetrievedChunk[]): string {
-  if (retrieved.length === 0) {
-    return `You are answering questions about a PDF document, but no relevant
-content was found for the user's question. Tell the user politely that you
-couldn't find information about their question in the document, and suggest
-they rephrase or ask something else.`;
-  }
-
   const sources = retrieved
     .map((chunk, i) => `[${i + 1}] (page ${chunk.pageNumber})\n${chunk.content}`)
     .join("\n\n");
 
-  return `You are a helpful assistant answering questions strictly based on the
-provided document excerpts. Follow these rules carefully:
+  return `You are a helpful assistant answering questions about a specific PDF
+document. Excerpts from the document are provided below as numbered sources.
+
+Rules:
 
 1. Answer using ONLY the information in the sources below. If the sources
-   don't contain enough information, say so clearly — do not fabricate.
+   don't contain enough information to answer, say so directly — explain
+   what the document does cover and suggest a related question the user
+   could ask. Never claim "no document was provided."
 
 2. Cite every factual claim using square-bracket numbers like [1] or [2,3]
    that match the source numbers. Place citations immediately after the

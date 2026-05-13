@@ -15,8 +15,8 @@ function renderWithCitations(text: string, sources: Source[]) {
   const sourceMap = new Map(sources.map((s) => [s.n, s]));
   const parts: React.ReactNode[] = [];
 
-  // Match [1], [12], or [1, 2, 3]. We accept comma-separated lists so
-  // a model can attribute one claim to multiple sources naturally.
+  // Match [1], [12], or [1, 2, 3]. We accept comma-separated lists so a
+  // model can attribute one claim to multiple sources naturally.
   const regex = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -32,11 +32,11 @@ function renderWithCitations(text: string, sources: Source[]) {
       const source = sourceMap.get(n);
       if (source) {
         parts.push(<SourceBadge key={`s-${key++}`} source={source} />);
-      } else {
-        // Model cited a number we don't have. Render it as plain text
-        // rather than a broken badge — less confusing than dropping it.
-        parts.push(`[${n}]`);
       }
+      // If the model cites a number we don't have a source for, we
+      // silently drop the marker rather than render a broken badge or
+      // a styled-out-of-place "[5]". The surrounding sentence still
+      // reads correctly.
     }
 
     lastIndex = match.index + match[0].length;

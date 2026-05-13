@@ -11,7 +11,10 @@ type DocumentSummaryProps = {
 };
 
 // Collapsible summary panel. Renders the pre-computed summary that was
-// generated at ingestion. Users can regenerate on demand.
+// generated at ingestion. Users can regenerate on demand. Collapsed by
+// default to keep the chat thread above the fold; when expanded, the
+// content area caps at a fixed height and scrolls internally for long
+// summaries instead of pushing the chat down the page.
 export function DocumentSummary({
   documentId,
   initialSummary,

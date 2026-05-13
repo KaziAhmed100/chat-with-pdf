@@ -8,27 +8,58 @@ type Source = {
   content: string;
 };
 
-// Inline citation badge. Tap or hover to see the excerpt and page
-// number. Designed to feel like a Wikipedia citation — lightweight,
-// non-intrusive, but rich on demand.
+// Inline citation badge styled like an academic footnote. Shows the
+// page number directly (rather than an opaque source index) so readers
+// can scan citations without needing to click. The popover surfaces
+// just enough of the source text to verify the claim — never the full
+// chunk, which is overwhelming.
 export function SourceBadge({ source }: { source: Source }) {
+  const excerpt = truncateAtSentence(source.content, 220);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-100 px-1.5 align-text-bottom text-[10px] font-semibold text-blue-700 transition-colors hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          aria-label={`Source ${source.n}, page ${source.pageNumber}`}
+          className="ml-0.5 inline-flex h-5 items-center rounded-md bg-blue-100 px-1.5 align-text-bottom text-[10px] font-semibold tracking-wide text-blue-700 uppercase transition-colors hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          aria-label={`Source from page ${source.pageNumber}`}
         >
-          {source.n}
+          p.{source.pageNumber}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 text-sm">
-        <div className="mb-2 flex items-center justify-between border-b border-slate-200 pb-2">
-          <span className="font-semibold text-slate-700">Source {source.n}</span>
-          <span className="text-xs text-slate-500">Page {source.pageNumber}</span>
+      <PopoverContent className="w-72" side="top" align="start">
+        <div className="mb-2 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+          Page {source.pageNumber}
         </div>
-        <p className="leading-relaxed text-slate-600">{source.content}</p>
+        <p className="text-xs leading-relaxed text-slate-700">{excerpt}</p>
       </PopoverContent>
     </Popover>
   );
+}
+
+// Cut text at the last sentence boundary before `max` characters. Falls
+// back to a word boundary, then to a hard cut, depending on what the
+// content allows. This produces excerpts that read like proper quotations
+// rather than mid-word truncations.
+function truncateAtSentence(text: string, max: number): string {
+  if (text.length <= max) return text;
+
+  const truncated = text.slice(0, max);
+
+  // Prefer ending at a sentence boundary (.!?) — most readable.
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf(". "),
+    truncated.lastIndexOf("! "),
+    truncated.lastIndexOf("? "),
+  );
+  if (lastSentenceEnd > max * 0.5) {
+    return truncated.slice(0, lastSentenceEnd + 1) + " …";
+  }
+
+  // Fall back to last word boundary.
+  const lastSpace = truncated.lastIndexOf(" ");
+  if (lastSpace > 0) {
+    return truncated.slice(0, lastSpace) + " …";
+  }
+
+  return truncated + "…";
 }
