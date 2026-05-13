@@ -2,10 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, FileText } from "lucide-react";
 import { getDocument } from "@/lib/documents";
-import { Chat } from "@/components/chat";
+import { ChatShell } from "@/components/chat-shell";
 
-// Per-document chat page. The Chat component is a client component;
-// everything around it stays server-rendered for fast initial load.
+// Per-document page. Renders a server-side header (filename, back link)
+// and the interactive ChatShell below.
 export default async function ChatPage({ params }: { params: Promise<{ documentId: string }> }) {
   const { documentId } = await params;
   const doc = await getDocument(documentId);
@@ -34,7 +34,12 @@ export default async function ChatPage({ params }: { params: Promise<{ documentI
         </div>
       </div>
 
-      <Chat documentId={documentId} />
+      <ChatShell
+        documentId={documentId}
+        documentName={doc.filename}
+        pageCount={doc.pageCount}
+        initialSummary={doc.summary}
+      />
     </main>
   );
 }
