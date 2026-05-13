@@ -12,7 +12,7 @@ export default function HomePage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500"></span>
             </span>
-            AI-powered document Q&amp;A
+            Kazi Ahmed’s AI-Powered Document Q&amp;A
           </div>
 
           <h1 className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-600 bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl">
