@@ -1,8 +1,10 @@
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { documents, chunks } from "@/db/schema";
 import { extractPdfText } from "./pdf";
 import { chunkPages } from "./chunking";
 import { embedTexts } from "./embeddings";
+import { summarizeDocument } from "./summarize";
 
 const MAX_PAGES = 50;
 
@@ -13,9 +15,9 @@ export type IngestResult = {
   chunkCount: number;
 };
 
-// Full ingestion pipeline: extract text → chunk → embed → persist.
-// Throws if anything goes wrong; the API route handler turns those into
-// user-friendly HTTP responses.
+// Full ingestion pipeline: extract text → chunk → embed → persist →
+// summarize. Summarization runs in parallel with chunk insertion so it
+// doesn't extend total time — the user sees both finish together.
 export async function ingestPdf(
   filename: string,
   fileSize: number,
@@ -35,15 +37,10 @@ export async function ingestPdf(
     throw new Error("No chunks produced — the PDF appears to have no usable text.");
   }
 
-  // 3. Embed all chunks. This is the slowest step (a few seconds for a
-  //    typical document). Batched internally for throughput.
+  // 3. Embed all chunks. Slowest step (a few seconds typically).
   const embeddings = await embedTexts(docChunks.map((c) => c.content));
 
-  // 4. Persist atomically. The neon-http driver doesn't support multi-
-  //    statement transactions in a single round-trip, but we get
-  //    consistency by inserting the parent first and using its ID as the
-  //    foreign key on every chunk row. If the chunk insert fails, the
-  //    caller can clean up the parent.
+  // 4. Persist parent document.
   const [insertedDoc] = await db
     .insert(documents)
     .values({
@@ -54,7 +51,10 @@ export async function ingestPdf(
     .returning();
 
   try {
-    // Insert chunks in batches to avoid query size limits.
+    // 5. Insert chunks and generate summary in parallel. Both take a few
+    //    seconds; running them concurrently saves end-to-end latency.
+    const summaryPromise = summarizeDocument(pages);
+
     const INSERT_BATCH = 100;
     for (let i = 0; i < docChunks.length; i += INSERT_BATCH) {
       const batch = docChunks.slice(i, i + INSERT_BATCH);
@@ -67,12 +67,17 @@ export async function ingestPdf(
       }));
       await db.insert(chunks).values(values);
     }
+
+    // 6. Update the document with its summary. Done as a separate query
+    //    after chunks are in so we know the row still exists.
+    const summary = await summaryPromise;
+    await db.update(documents).set({ summary }).where(eq(documents.id, insertedDoc.id));
   } catch (error) {
-    // Best-effort cleanup if chunk inserts fail. Cascade delete on the
-    // foreign key takes care of anything we did manage to insert.
+    // Best-effort cleanup. Cascade delete on the foreign key handles
+    // any chunks we did manage to insert.
     await db
       .delete(documents)
-      .where({ id: insertedDoc.id } as never)
+      .where(eq(documents.id, insertedDoc.id))
       .catch(() => {});
     throw error;
   }
