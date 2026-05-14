@@ -2,15 +2,18 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileText, Loader2 } from "lucide-react";
+import { Upload, FileText, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useUpload } from "@/lib/hooks/useUpload";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-// Drag-and-drop area for PDF uploads. Validates client-side before
-// kicking off the request — gives instant feedback for bad files
-// without a round-trip.
+// The sample PDF lives in /public so it's served as a static file. We
+// fetch it client-side and feed it through the same upload pipeline as
+// a real upload — same validation, same ingestion, same chat experience.
+const SAMPLE_PDF_PATH = "/impact-of-ai-in-healthcare.pdf";
+const SAMPLE_PDF_NAME = "Impact of AI in Healthcare.pdf";
+
 export function UploadDropzone() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -19,8 +22,6 @@ export function UploadDropzone() {
 
   const handleFile = useCallback(
     async (file: File) => {
-      // Client-side validation. The server re-validates everything; this
-      // is purely for fast user feedback.
       if (file.type !== "application/pdf") {
         toast.error("Please upload a PDF file.");
         return;
@@ -53,11 +54,25 @@ export function UploadDropzone() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) void handleFile(file);
-      // Reset so the same file can be selected again after an error.
       e.target.value = "";
     },
     [handleFile],
   );
+
+  // Fetch the sample PDF and feed it into the same handler the real
+  // upload path uses. Lets visitors who don't have a PDF handy still
+  // experience the app end-to-end.
+  const handleSamplePdf = useCallback(async () => {
+    try {
+      const response = await fetch(SAMPLE_PDF_PATH);
+      if (!response.ok) throw new Error("Couldn't load sample.");
+      const blob = await response.blob();
+      const file = new File([blob], SAMPLE_PDF_NAME, { type: "application/pdf" });
+      await handleFile(file);
+    } catch {
+      toast.error("Couldn't load the sample PDF.");
+    }
+  }, [handleFile]);
 
   const isLoading = stage === "uploading" || stage === "processing";
 
@@ -116,6 +131,18 @@ export function UploadDropzone() {
           </div>
         )}
       </div>
+
+      {!isLoading && (
+        <div className="mt-4 flex items-center justify-center">
+          <button
+            onClick={handleSamplePdf}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1.5 text-xs font-medium text-slate-600 backdrop-blur-sm transition-all hover:bg-white hover:text-slate-900"
+          >
+            <Sparkles className="h-3 w-3 text-blue-500" />
+            Try with a sample PDF (Impact of AI in Healthcare)
+          </button>
+        </div>
+      )}
     </div>
   );
 }
