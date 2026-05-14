@@ -13,6 +13,19 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/consistent-type-imports": "warn",
     },
   },
+  {
+    files: ["tests/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+    languageOptions: {
+      globals: {
+        describe: "readonly",
+        it: "readonly",
+        expect: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        vi: "readonly",
+      },
+    },
+  },
   globalIgnores([".next/**", "out/**", "build/**", "node_modules/**", "next-env.d.ts"]),
 ]);
 
